@@ -1,0 +1,2 @@
+# Clarinet invariant tests land here during the build phase.
+# Must cover every invariant in ../README.md, including the adversarial withdrawal path.

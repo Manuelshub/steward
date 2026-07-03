@@ -1,0 +1,20 @@
+{
+  "name": "steward",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An autonomous treasury agent bounded by FlowVault's on-chain rules. Built for the FlowVault Builder Bounty.",
+  "license": "MIT",
+  "workspaces": [
+    "packages/core",
+    "packages/sdk",
+    "apps/agent",
+    "apps/web"
+  ],
+  "scripts": {
+    "contracts:check": "cd packages/contracts && clarinet check",
+    "contracts:test": "cd packages/contracts && npm test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
