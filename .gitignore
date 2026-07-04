@@ -22,6 +22,11 @@ packages/contracts/.cache/
 packages/contracts/history.txt
 packages/contracts/settings/*.mainnet.toml
 
+# Clarinet / vitest test artifacts
+packages/contracts/costs-reports.json
+packages/contracts/lcov.info
+coverage/
+
 # Logs
 *.log
 npm-debug.log*

@@ -124,25 +124,36 @@ code (per FlowVault AI-integration guidance). Its on-chain authority is limited 
 
 ## 4. FlowVault interface (the contract we build against)
 
-From the FlowVault docs — the real, deterministic base contract. Steward builds strictly on this.
+Verified against **`flowvault-sdk@0.1.2`** — see [`docs/flowvault-notes.md`](./docs/flowvault-notes.md)
+for the full ground-truth reference. Contract: `flowvault-v2`; token: `usdcx` (6 decimals). Amounts
+are **micro-units** (`MicroAmount = bigint | number | string`).
 
-**Public functions**
-- `set-routing-rules(lockAmount, lockUntilBlock, splitAddress, splitAmount)` — per-principal config.
-- `deposit(...)` — accepts a SIP-010 transfer, runs the pipeline.
-- `withdraw(...)` — caller withdraws their **unlocked** balance only.
-- `clear-routing-rules()` — resets to default hold-all.
-- `get-vault-state()` — read-only: locked/unlocked balances + active rules.
+**SDK methods (the interface `@steward/sdk` wraps)**
+- Writes: `setRoutingRules(rules)` (alias `createStrategy`), `deposit(amount)`, `withdraw(amount)`,
+  `clearRoutingRules()`.
+- Reads: `getVaultState(addr)`, `getRoutingRules(addr)`, `hasLockedFunds(addr)`,
+  `getCurrentBlockHeight(addr)`.
+- `RoutingRules { lockAmount, lockUntilBlock, splitAddress, splitAmount }` — maps 1:1 to
+  `set-routing-rules`. `splitAddress` **must be `null`** when `splitAmount` is 0.
 
-**Deposit pipeline (deterministic):** `Split → Lock → Hold-remainder`.
+**Deposit pipeline (deterministic):** `Split → Lock → Hold-remainder`. One `splitAddress`, fixed
+`splitAmount` (no native percentages/multi-recipient). `lockUntilBlock` is an absolute height. Rules
+are per-principal.
 
-**Base constraints (must design around):**
-- Exactly **one** `splitAddress`, a **fixed** `splitAmount` (no percentages, no multi-recipient).
-- `lockUntilBlock` is an **absolute** chain height.
-- Rules are **per principal**; each wallet is independent.
-- `split + lock <= deposit` or the tx aborts.
+**Base contract invariants (enforced on-chain — the real Ring 1; error codes in the notes doc):**
+- `1001` amount must be > 0 · `1004` `split + lock <= deposit` · `1007` split address required when
+  `splitAmount > 0` · `1008` `lockUntilBlock` must be a future block · `1010` `lockAmount <= deposit −
+  splitAmount` (lock ≤ hold) · `1011` cannot split to yourself · `1003` locked funds cannot be
+  withdrawn early **(the money-shot)** · `1000` principal-gated.
 
-**Environment rule:** contract and token principals must be on the **same network**; mixed
-testnet/mainnet pairs are invalid.
+The Policy Compiler (Ring 2) **mirrors** these so illegal drafts are rejected before broadcast; the
+chain remains the backstop.
+
+**Key custody is a first-class SDK feature:** `senderKey` (agent, server-side) vs. `contractCallExecutor`
+(browser wallet signing via `@stacks/connect`, no key exposure) — exactly the split in §3.
+
+**Environment rule:** contract and token principals must be on the **same network** (asserted at
+startup); mixed testnet/mainnet pairs are invalid.
 
 ---
 
@@ -294,14 +305,16 @@ Not a build schedule — the sequence the architecture is designed to make demon
 
 ---
 
-## 12. Open questions to resolve during build
+## 12. Open questions
 
-- Exact `flowvault-sdk` function names + `steward-router` interface once the real package is pulled
-  (docs describe behavior; confirm signatures against the published SDK/contracts).
-- Whether the multi-recipient payout table is done natively in Clarity or by orchestrating multiple
-  base deposits from the agent (affects the extension's complexity budget).
-- Which signals are real vs. cleanly mocked for the demo (runway is real from `get-vault-state`;
-  payroll calendar + milestone flags can be config-driven).
+- ~~Exact `flowvault-sdk` function names + interface~~ — **RESOLVED (E0.1):** verified against
+  `flowvault-sdk@0.1.2`; see §4 + [`docs/flowvault-notes.md`](./docs/flowvault-notes.md).
+- ~~FlowVault + token contract principals~~ — **RESOLVED (E0.2):** testnet defaults ship in the SDK
+  (`STD7…​.flowvault-v2`, `ST1PQ…​.usdcx`); in `.env.example`.
+- **Open:** whether the multi-recipient payout table (stretch, §5) is native Clarity or agent-orchestrated
+  multiple base deposits (affects the extension's complexity budget).
+- **Open:** which signals are real vs. cleanly mocked (runway is real from `get-vault-state`; payroll
+  calendar + milestone flags are config-driven for the demo).
 
 ---
 
