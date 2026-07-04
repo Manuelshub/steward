@@ -1,0 +1,38 @@
+id: 0
+name: Testnet deployment
+network: testnet
+stacks-node: https://api.testnet.hiro.so
+bitcoin-node: http://blockstack:blockstacksystem@bitcoind.testnet.stacks.co:18332
+plan:
+  batches:
+  - id: 0
+    transactions:
+    - transaction-type: contract-publish
+      contract-name: sip-010-trait
+      expected-sender: ST2PQ72SDAPWV64WH0K5ZH0HK4FPMFMAPV583Z799
+      cost: 9670
+      path: contracts/vendor/sip-010-trait.clar
+      anchor-block-only: true
+      clarity-version: 3
+    - transaction-type: contract-publish
+      contract-name: flowvault-v2
+      expected-sender: ST2PQ72SDAPWV64WH0K5ZH0HK4FPMFMAPV583Z799
+      cost: 112770
+      path: contracts/vendor/flowvault-v2.clar
+      anchor-block-only: true
+      clarity-version: 3
+    - transaction-type: contract-publish
+      contract-name: mock-usdcx
+      expected-sender: ST2PQ72SDAPWV64WH0K5ZH0HK4FPMFMAPV583Z799
+      cost: 11020
+      path: contracts/vendor/mock-usdcx.clar
+      anchor-block-only: true
+      clarity-version: 3
+    - transaction-type: contract-publish
+      contract-name: steward-router
+      expected-sender: ST2PQ72SDAPWV64WH0K5ZH0HK4FPMFMAPV583Z799
+      cost: 62410
+      path: contracts/steward-router.clar
+      anchor-block-only: true
+      clarity-version: 3
+    epoch: '3.3'

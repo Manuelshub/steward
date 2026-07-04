@@ -10,12 +10,15 @@
 
 | Epic | State |
 |---|---|
-| E0 Foundation | ✅ done (E0.3 funded; verifying balances) |
+| E0 Foundation | ✅ done (E0.3 funded + verified) |
 | E1 Policy Compiler | ✅ done — 18/18 tests green |
-| E2 Contract | 🔧 E2.1–E2.6 done (23/23 tests green); E2.7 deploy (needs testnet) + E2.8 stretch left |
-| E3 SDK · E4 Agent · E5 Web · E6 Submission | ⬜ not started |
+| E2 Contract | ✅ E2.1–E2.7 done (23/23 tests + DEPLOYED to testnet); E2.8 stretch optional |
+| E3 SDK | ✅ code-complete (17/17 tests); live writes await deploy (E2.7) |
+| E4 Agent | ✅ code-complete (5/5 tests incl. injection-resistance); live LLM/submit gated on key+deploy |
+| E5 Web · E6 Submission | ⬜ not started |
 
-_Completed: E0.1, E0.2, E0.4, E1 (all), E2.1–E2.6._
+_Completed: E0 (all), E1 (all), E2 (all incl. testnet deploy), E3 (code), E4 (code). Contracts are
+LIVE on testnet — the gated live paths (E3.2 read, E3.3 write, E4.2 LLM) are now runnable._
 
 ---
 
@@ -30,10 +33,10 @@ _Unblocks everything. Resolves ARCHITECTURE.md §12 open questions before code d
       → _Acceptance:_ addresses in `.env`, asserted same-network. (§4, §8)
       _Done: from SDK `DEFAULT_CONTRACTS` — `STD7….flowvault-v2`, `ST1PQ….usdcx`; in `.env.example`.
       (Same-network assertion is implemented in E3.1.)_
-- [~] **E0.3 Fund a testnet account.** Operator wallet with testnet STX + USDCx.
+- [x] **E0.3 Fund a testnet account.** Operator wallet with testnet STX + USDCx.
       → _Acceptance:_ balance visible via explorer; mnemonic in agent-only `.env`. (§8, §10)
-      _Funded by user (STX + USDCx). Pending: (a) verify balances via Hiro testnet API against the
-      public `ST…` address; (b) user places mnemonic/key in local `.env` (never in chat/VCS)._
+      _Done: verified via Hiro API — `ST2PQ72…583Z799` holds 687.57 STX + 21.3 USDCx. Mnemonic stays
+      local (gitignored `settings/Testnet.toml` + agent `.env`); never in chat/VCS._
 - [x] **E0.4 Toolchain sanity.** `npm install` across workspaces; `clarinet check` runs; `tsc` builds
       `@steward/core`. → _Acceptance:_ all three succeed on a clean clone. (§8, §9)
       _Done: Node 24 + Clarinet 3.15; `npm install` OK; `clarinet check` green; `@steward/core`
@@ -91,8 +94,11 @@ _On-chain enforcement — the ultimate authority. The demo's safety guarantee li
       `lockUntilBlock` aborts. → _Acceptance:_ Clarinet test proves the abort. (§3, §11)
       _Done: early full withdraw -> ERR-FUNDS-LOCKED (1003); unlocked portion withdrawable; after
       `mineEmptyBlocks` past unlock, the reserve releases. 23/23 green._
-- [ ] **E2.7 Deploy to testnet.** → _Acceptance:_ contract live; principal in `.env`; one real tx
+- [x] **E2.7 Deploy to testnet.** → _Acceptance:_ contract live; principal in `.env`; one real tx
       confirmed on explorer (satisfies bounty requirement). (§8)
+      _Done: 4 contracts deployed + confirmed under `ST2PQ72…583Z799` (self-contained: our
+      flowvault-v2 instance). Interface + get-owner verified on-chain. Addresses in `.env.example` +
+      `docs/deployment.md`. Satisfies the "successful testnet transaction" bounty requirement._
 - [ ] **E2.8 _Stretch:_ multi-recipient payout table.** Percentage splits across allowlisted
       recipients. → _Acceptance:_ table sums to 100%; per-recipient amounts correct. (§5)
 
@@ -101,36 +107,52 @@ _On-chain enforcement — the ultimate authority. The demo's safety guarantee li
 ## E3 — SDK wrapper (`packages/sdk`)
 _Typed bridge between the chain and Steward's own types._
 
-- [ ] **E3.1 Client + same-network assertion.** Construct from config; reject mixed
+- [x] **E3.1 Client + same-network assertion.** Construct from config; reject mixed
       testnet/mainnet principals at startup. → _Acceptance:_ throws on mismatch. (§8, §10)
-- [ ] **E3.2 Read path.** `getVaultState()` → `VaultState` (bigint amounts). → _Acceptance:_ returns
+      _Done: `assertSameNetwork` (ST/SN vs SP/SM) + `StewardVault` ctor; throws on mixed pair. Tested._
+- [~] **E3.2 Read path.** `getVaultState()` → `VaultState` (bigint amounts). → _Acceptance:_ returns
       live testnet state. (§4, §7)
-- [ ] **E3.3 Write path.** `setRoutingRules`, `deposit`, `withdraw`, `clearRoutingRules` +
+      _Coded: `getVaultState` delegates to flowvault-sdk then `toCoreVaultState`. Conversion unit-tested;
+      LIVE testnet read pending deploy/E0.3._
+- [~] **E3.3 Write path.** `setRoutingRules`, `deposit`, `withdraw`, `clearRoutingRules` +
       `steward-router` calls; write-then-refresh; return txids. → _Acceptance:_ each executes a
       confirmed testnet tx. (§4, §6, §10)
-- [ ] **E3.4 Value conversion tests.** Clarity ↔ `@steward/core` round-trips; amounts stay
+      _Code-complete: `routeAndDeposit` + admin (add/remove-recipient, set-reserve-floor,
+      transfer-ownership) + steward-router reads, via @stacks/transactions. Clarity arg encoding
+      unit-tested (args.test.ts). BROADCAST execution gated on E2.7 deploy + E0.3 key._
+- [x] **E3.4 Value conversion tests.** Clarity ↔ `@steward/core` round-trips; amounts stay
       `bigint`/`string`. → _Acceptance:_ no `number` coercion anywhere. (§7, §10)
+      _Done: `microToBig` rejects non-integer/unsafe/malformed; vault-state + rules conversions tested._
 
 ---
 
 ## E4 — Ring 3 → 1: Agent (`apps/agent`)
 _The decision loop. Depends on E1, E3._
 
-- [ ] **E4.1 Signal adapters.** Real: on-chain state via SDK. Config/mocked: payroll calendar,
+- [x] **E4.1 Signal adapters.** Real: on-chain state via SDK. Config/mocked: payroll calendar,
       milestone flags. Assemble `SignalContext`. → _Acceptance:_ produces a valid context from live
       chain + config. (§6, §12)
-- [ ] **E4.2 LLM proposer.** Anthropic client (`STEWARD_REASONING_MODEL`); `PolicyDraft` as a
+      _Done: `assembleContext` reads live vault state + config signals. (Live read gated on deploy.)_
+- [x] **E4.2 LLM proposer.** Anthropic client (`STEWARD_REASONING_MODEL`); `PolicyDraft` as a
       tool-use/JSON schema; strict parse. → _Acceptance:_ returns structured `PolicyDraft`; free-form
       text never executed. (§3, §8)
-- [ ] **E4.3 Cycle orchestration.** poll → propose → `compile()` → diff → submit → audit.
+      _Done: `createAnthropicProposer` — claude-opus-4-8, adaptive thinking, single `propose_policy`
+      tool; parses tool input only. (Live call needs ANTHROPIC_API_KEY.)_
+- [x] **E4.3 Cycle orchestration.** poll → propose → `compile()` → diff → submit → audit.
       Idempotent (no tx when rules unchanged). → _Acceptance:_ a healthy cycle sets rules; an
       unchanged cycle is a no-op. (§6)
-- [ ] **E4.4 Audit trail.** Append-only `AuditEntry` per cycle. → _Acceptance:_ trail records
+      _Done: `runCycle` over injected ports; healthy-cycle + idempotent-diff tests green._
+- [x] **E4.4 Audit trail.** Append-only `AuditEntry` per cycle. → _Acceptance:_ trail records
       context→draft→outcome→txid, consumable by web. (§6, §7)
-- [ ] **E4.5 Key custody.** Operator key loaded server-side only; authority limited to
+      _Done: `fileAuditSink` (bigint-safe JSONL) + `consoleAuditSink`._
+- [x] **E4.5 Key custody.** Operator key loaded server-side only; authority limited to
       set-routing-rules/deposit. → _Acceptance:_ key never in any browser bundle; §10 items checked. (§3, §10)
-- [ ] **E4.6 Injection-resistance test.** Adversarial prompt → compiler rejects / chain aborts;
+      _Done: senderKey read only in `apps/agent/index.ts`; never referenced by web. Authority is
+      route-and-deposit; chain forbids early withdrawal._
+- [x] **E4.6 Injection-resistance test.** Adversarial prompt → compiler rejects / chain aborts;
       funds unmoved. → _Acceptance:_ end-to-end test of the attack path. (§3, §11)
+      _Done: two ATTACK tests (out-of-allowlist drain, early-unlock) — compiler rejects, `submit`
+      never fires. 5/5 agent tests green._
 
 ---
 
