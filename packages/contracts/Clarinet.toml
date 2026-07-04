@@ -1,0 +1,47 @@
+[project]
+name = "steward-contracts"
+description = "On-chain enforcement layer for Steward — steward-router extension over FlowVault."
+authors = []
+telemetry = false
+cache_dir = "./.cache"
+
+# [contracts.counter]
+# path = "contracts/counter.clar"
+# epoch = "latest"
+
+# Check-checker settings:
+# trusted_sender: if true, inputs are trusted after tx_sender has been checked.
+# trusted_caller: if true, inputs are trusted after contract-caller has been checked.
+# callee_filter: if true, untrusted data may be passed into a private function without a
+# warning, if it gets checked inside. This check will also propagate up to the
+# caller.
+# More informations: https://www.hiro.so/blog/new-safety-checks-in-clarinet
+
+[repl.analysis]
+passes = ["check_checker"]
+# trusted_sender: admin writes are gated on tx-sender via assert-owner, so inputs the
+# verified owner supplies are trusted (silences "unchecked data" on owner-only setters).
+check_checker = { trusted_sender = true, trusted_caller = false, callee_filter = false }
+
+[contracts]
+
+[contracts.steward-router]
+path = "contracts/steward-router.clar"
+clarity_version = 3
+epoch = "latest"
+
+# --- Vendored from testnet for simnet integration testing only (see contracts/vendor/) ---
+[contracts.sip-010-trait]
+path = "contracts/vendor/sip-010-trait.clar"
+clarity_version = 3
+epoch = "latest"
+
+[contracts.flowvault-v2]
+path = "contracts/vendor/flowvault-v2.clar"
+clarity_version = 3
+epoch = "latest"
+
+[contracts.mock-usdcx]
+path = "contracts/vendor/mock-usdcx.clar"
+clarity_version = 3
+epoch = "latest"

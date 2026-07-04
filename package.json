@@ -16,5 +16,8 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@stacks/wallet-sdk": "^7.5.0"
   }
 }
