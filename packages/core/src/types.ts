@@ -19,10 +19,17 @@ export type Principal = string;
  * (apps/agent) from on-chain state + configured/mocked signals.
  */
 export interface SignalContext {
+  /** The vault owner / treasury principal (used to enforce no-self-split, code 1011). */
+  readonly owner: Principal;
   /** Current on-chain vault state (mirror of get-vault-state). */
   readonly vault: VaultState;
-  /** Current chain tip height — basis for any lockUntilBlock decision. */
+  /** Current chain tip height — basis for any lockUntilBlock decision (code 1008). */
   readonly currentBlock: BlockHeight;
+  /**
+   * The amount being deposited / routed this cycle (base units). This is the basis for
+   * the split+lock<=deposit (1004) and lock<=hold (1010) invariants.
+   */
+  readonly pendingDeposit: bigint;
   /** Total treasury value under management (base units). */
   readonly treasuryBalance: bigint;
   /** Estimated runway as a fraction [0,1]; 1 = fully funded target reserve. */
