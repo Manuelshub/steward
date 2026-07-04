@@ -31,6 +31,24 @@ reference to the full principal (`'STD7QG84….flowvault-v2`) — see ARCHITECTU
   `is-owner`, `validate-recipient`, `validate-reserve-floor`.
 - `get-owner` → deployer (`ST2PQ72…`). Ownership initialized correctly.
 
+## Live smoke test (E3.3 verification + demo evidence)
+
+Ran `scripts/smoke.mjs` against the deployed contracts (2026-07-04). All six transactions confirmed:
+
+| Call | Status | Result | txid |
+|---|---|---|---|
+| `mint` 2 USDCx | success | `(ok true)` | `c4c94e9b…10ad47` |
+| `set-reserve-floor 0` | success | `(ok true)` | `d33b2cf9…4673bb5` |
+| `add-recipient` | success | `(ok true)` | `4570fb79…38e6c86` |
+| `route-and-deposit` (split 300k / lock 400k / hold 300k) | success | `(ok (tuple (deposited u1000000) (held u700000) (locked u400000) (split u300000)))` | `68d75b9e…2fe42c76` |
+| **money-shot: drain full vault** | **abort_by_response** | **`(err u1003)`** | `38032c3b…c8a8c64e` |
+| withdraw unlocked 300k | success | `(ok (tuple (remaining u400000) (withdrawn u300000)))` | `faa170c0…5fa30ab1` |
+
+Explorer: `https://explorer.hiro.so/txid/0x<txid>?chain=testnet`. The money-shot tx is a **confirmed
+on-chain abort** — the depositor could not withdraw the 400k locked reserve; only the 300k unlocked
+portion was spendable (`remaining u400000`). This is the "the vault holds the authority, not the AI"
+guarantee, on live testnet.
+
 ## Demo token
 
 `mock-usdcx` has a public `mint (amount recipient)` for funding demo accounts. The official USDCx

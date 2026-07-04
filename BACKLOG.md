@@ -13,9 +13,10 @@
 | E0 Foundation | ✅ done (E0.3 funded + verified) |
 | E1 Policy Compiler | ✅ done — 18/18 tests green |
 | E2 Contract | ✅ E2.1–E2.7 done (23/23 tests + DEPLOYED to testnet); E2.8 stretch optional |
-| E3 SDK | ✅ code-complete (17/17 tests); live writes await deploy (E2.7) |
+| E3 SDK | ✅ 17/17 tests + LIVE-VERIFIED on testnet (route-and-deposit + money-shot confirmed) |
 | E4 Agent | ✅ code-complete (5/5 tests incl. injection-resistance); live LLM/submit gated on key+deploy |
-| E5 Web · E6 Submission | ⬜ not started |
+| E5 Web | 🔧 source complete (attack demo + live vault + audit trail + wallet); needs `npm install` + browser QA |
+| E6 Submission | ⬜ not started |
 
 _Completed: E0 (all), E1 (all), E2 (all incl. testnet deploy), E3 (code), E4 (code). Contracts are
 LIVE on testnet — the gated live paths (E3.2 read, E3.3 write, E4.2 LLM) are now runnable._
@@ -114,12 +115,12 @@ _Typed bridge between the chain and Steward's own types._
       live testnet state. (§4, §7)
       _Coded: `getVaultState` delegates to flowvault-sdk then `toCoreVaultState`. Conversion unit-tested;
       LIVE testnet read pending deploy/E0.3._
-- [~] **E3.3 Write path.** `setRoutingRules`, `deposit`, `withdraw`, `clearRoutingRules` +
+- [x] **E3.3 Write path.** `setRoutingRules`, `deposit`, `withdraw`, `clearRoutingRules` +
       `steward-router` calls; write-then-refresh; return txids. → _Acceptance:_ each executes a
       confirmed testnet tx. (§4, §6, §10)
-      _Code-complete: `routeAndDeposit` + admin (add/remove-recipient, set-reserve-floor,
-      transfer-ownership) + steward-router reads, via @stacks/transactions. Clarity arg encoding
-      unit-tested (args.test.ts). BROADCAST execution gated on E2.7 deploy + E0.3 key._
+      _Done + LIVE-VERIFIED: `scripts/smoke.mjs` broadcast add-recipient, set-reserve-floor,
+      route-and-deposit, and withdraw against the deployed contracts — all confirmed on testnet,
+      including the money-shot abort `(err u1003)`. Evidence in docs/deployment.md._
 - [x] **E3.4 Value conversion tests.** Clarity ↔ `@steward/core` round-trips; amounts stay
       `bigint`/`string`. → _Acceptance:_ no `number` coercion anywhere. (§7, §10)
       _Done: `microToBig` rejects non-integer/unsafe/malformed; vault-state + rules conversions tested._
@@ -159,17 +160,25 @@ _The decision loop. Depends on E1, E3._
 ## E5 — Interface (`apps/web`)
 _Makes the trust model visible — the judging asset. Depends on E2, E3, E4 outputs._
 
-- [ ] **E5.1 Next.js bootstrap + wallet connect.** Leather/Xverse/Hiro via Stacks Connect;
+- [~] **E5.1 Next.js bootstrap + wallet connect.** Leather/Xverse/Hiro via Stacks Connect;
       `NEXT_PUBLIC_*` config only. → _Acceptance:_ wallet connects on testnet. (§8, §10)
-- [ ] **E5.2 Live vault state panel.** Locked/unlocked + active rules, polled (write-then-refresh).
+      _Source written (App Router, `WalletButton` via @stacks/connect v8). Needs `npm install` +
+      browser QA — sandbox couldn't build Next.js._
+- [~] **E5.2 Live vault state panel.** Locked/unlocked + active rules, polled (write-then-refresh).
       → _Acceptance:_ reflects on-chain state within one poll. (§4, §6)
-- [ ] **E5.3 Agent proposal feed.** Stream the audit trail: signal→proposal→compiled rules→txid.
+      _Source written (`VaultPanel` polls deployed flowvault-v2 via fetchCallReadOnlyFunction)._
+- [~] **E5.3 Agent proposal feed.** Stream the audit trail: signal→proposal→compiled rules→txid.
       → _Acceptance:_ each cycle appears with its txid link. (§6)
-- [ ] **E5.4 The attack demo control.** Button injects the adversarial instruction; UI shows the
+      _Source written (`ProposalFeed` renders the real on-chain smoke-test trail with explorer links)._
+- [~] **E5.4 The attack demo control.** Button injects the adversarial instruction; UI shows the
       rejection / on-chain abort and funds sitting safe. → _Acceptance:_ reproduces the money-shot
       live. (§11)
-- [ ] **E5.5 User-signed deposit/withdraw.** No operator key in browser. → _Acceptance:_ deposits via
+      _Source written (`AttackDemo` runs the REAL @steward/core compiler in-browser; links to the
+      on-chain money-shot). The centerpiece._
+- [~] **E5.5 User-signed deposit/withdraw.** No operator key in browser. → _Acceptance:_ deposits via
       connected wallet; locked withdraw blocked pre-unlock. (§10)
+      _Wired: `DepositCard` — wallet-signed mint + route-and-deposit via @stacks/connect v8 `request`.
+      Pending browser QA (connect v8 call shape unverifiable in sandbox)._
 
 ---
 
