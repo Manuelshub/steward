@@ -15,8 +15,8 @@
 | E2 Contract | ✅ E2.1–E2.7 done (23/23 tests + DEPLOYED to testnet); E2.8 stretch optional |
 | E3 SDK | ✅ 17/17 tests + LIVE-VERIFIED on testnet (route-and-deposit + money-shot confirmed) |
 | E4 Agent | ✅ code-complete (5/5 tests incl. injection-resistance); live LLM/submit gated on key+deploy |
-| E5 Web | 🔧 source complete (attack demo + live vault + audit trail + wallet); needs `npm install` + browser QA |
-| E6 Submission | ⬜ not started |
+| E5 Web | ✅ built + running (content-complete) |
+| E6 Submission | 🔧 docs done (integration, builder-award, deployment, demo script, README, LICENSE); needs repo push + deploy URL + video |
 
 _Completed: E0 (all), E1 (all), E2 (all incl. testnet deploy), E3 (code), E4 (code). Contracts are
 LIVE on testnet — the gated live paths (E3.2 read, E3.3 write, E4.2 LLM) are now runnable._
@@ -185,13 +185,20 @@ _Makes the trust model visible — the judging asset. Depends on E2, E3, E4 outp
 ## E6 — Submission package
 _Turns a working system into a winning entry. Maps to the bounty's required deliverables._
 
-- [ ] **E6.1 Public GitHub repo** — clean history, MIT, ARCHITECTURE.md front-and-center. (bounty req)
-- [ ] **E6.2 Working demo app deployed** — reachable URL on testnet. (bounty req)
-- [ ] **E6.3 Demo video** — follows the §11 narrative; ends on the attack money-shot. (bounty req)
-- [ ] **E6.4 Integration write-up** — how Steward uses Lock/Split/Hold + the extension. (bounty req)
-- [ ] **E6.5 Testnet tx evidence** — explorer links to set-rules, deposit, and the aborted attack. (bounty req)
-- [ ] **E6.6 Builder Award artifact** — `steward-router` extension (+ any SDK/doc contributions)
+- [~] **E6.1 Public GitHub repo** — clean history, MIT, ARCHITECTURE.md front-and-center. (bounty req)
+      _Repo-ready: MIT `LICENSE`, submission-quality `README.md`, `SUBMISSION.md`. Needs you to add a
+      remote + push._
+- [~] **E6.2 Working demo app deployed** — reachable URL on testnet. (bounty req)
+      _App built (`apps/web`); needs you to deploy (e.g. Vercel) + paste the URL into SUBMISSION.md._
+- [~] **E6.3 Demo video** — follows the narrative; ends on the attack money-shot. (bounty req)
+      _Script done: `docs/demo-script.md`. Needs you to record._
+- [x] **E6.4 Integration write-up** — how Steward uses Lock/Split/Hold + the extension. (bounty req)
+      _Done: `docs/integration.md` (Clarity composition + all 3 primitives + SDK)._
+- [x] **E6.5 Testnet tx evidence** — explorer links to set-rules, deposit, and the aborted attack. (bounty req)
+      _Done: `docs/deployment.md` — 4 deploys + 6 routing txns incl. the money-shot, with explorer links._
+- [x] **E6.6 Builder Award artifact** — `steward-router` extension (+ any SDK/doc contributions)
       written up as an upstream improvement. (§5, Ecosystem)
+      _Done: `docs/builder-award.md`._
 
 ---
 
