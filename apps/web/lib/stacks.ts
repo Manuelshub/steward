@@ -16,6 +16,19 @@ function split(id: string): { address: string; name: string } {
   return { address, name };
 }
 
+/**
+ * Coerce a `cvToValue` output into a bigint. With `strictJsonCompat` on, uint/int
+ * fields come back wrapped as `{ type, value }` (value is a string); bare reads may
+ * come back as a plain string/number/bigint. Handle both so the shape can't bite us.
+ */
+function toBig(raw: unknown): bigint {
+  if (raw == null) return 0n;
+  if (typeof raw === "object" && "value" in (raw as Record<string, unknown>)) {
+    return BigInt((raw as { value: string | number | bigint }).value);
+  }
+  return BigInt(raw as string | number | bigint);
+}
+
 /** Read a user's live vault state from the deployed flowvault-v2 (no wallet needed). */
 export async function readVaultState(userAddress: string): Promise<VaultView> {
   const { address, name } = split(CONFIG.flowvault);
@@ -28,7 +41,7 @@ export async function readVaultState(userAddress: string): Promise<VaultView> {
     network: CONFIG.network,
   });
   const v = cvToValue(cv, true) as Record<string, unknown>;
-  const big = (k: string) => BigInt((v[k] ?? 0) as string | number | bigint);
+  const big = (k: string) => toBig(v[k]);
   return {
     totalBalance: big("total-balance"),
     lockedBalance: big("locked-balance"),
@@ -49,7 +62,7 @@ export async function readReserveFloor(sender: string): Promise<bigint> {
     senderAddress: sender,
     network: CONFIG.network,
   });
-  return BigInt(cvToValue(cv, true) as string | number | bigint);
+  return toBig(cvToValue(cv, true));
 }
 
 /** Current testnet Stacks block height. */
